@@ -27,3 +27,4 @@ router.route("/refresh-token").post(refreshAccessToken)
 
 
 export default router
+// this router where we use middleware to redirect the user
