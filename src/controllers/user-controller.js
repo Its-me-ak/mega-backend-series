@@ -5,6 +5,7 @@ import { uploadImageOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from 'jsonwebtoken'
 import { v2 as cloudinary } from 'cloudinary';
+import mongoose from "mongoose";
 
 const generateAccessTokenAndRefreshToken = async (userId) => {
     try {
@@ -379,13 +380,13 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
                         if: { $in: [req.user?._id, "$subscribers.subscriber"] },
                         then: true,
                         else: false
-                     }
+                    }
                 }
             }
         },
         {
             $project: {
-                fullname : 1,
+                fullname: 1,
                 username: 1,
                 totalSubscriber: 1,
                 totalChannelsSubscribedTo: 1,
@@ -397,12 +398,61 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         }
     ])
     console.log(channel);
-    if(!channel?.length){
+    if (!channel?.length) {
         throw new ApiError(404, "Channel does not exist")
     }
     return res
-    .status(200)
-    .json(new ApiResponse(200, channel[0], "User channel found successfully"))
+        .status(200)
+        .json(new ApiResponse(200, channel[0], "User channel found successfully"))
 })
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage }
+// get user watch history
+const getWatchHistory = asyncHandler(async (req, res) => {
+    const user = await User.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "watchHistory",
+                pipeline: [
+                    {
+                        $lookup:{
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullname: 1,
+                                        username: 1,
+                                        avatar: 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        $addFields : {
+                            // owner: { $arrayElemAt: ["$owner", 0] }
+                            owner: {
+                                $first: "$owner"
+                             }
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+    return res
+    .status(200)
+    .json(new ApiResponse(200, user[0].watchHistory, "User watch history successfully fetched"))
+})
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage, getWatchHistory }
