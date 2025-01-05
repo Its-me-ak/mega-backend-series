@@ -422,7 +422,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
                 as: "watchHistory",
                 pipeline: [
                     {
-                        $lookup:{
+                        $lookup: {
                             from: "users",
                             localField: "owner",
                             foreignField: "_id",
@@ -439,11 +439,11 @@ const getWatchHistory = asyncHandler(async (req, res) => {
                         }
                     },
                     {
-                        $addFields : {
+                        $addFields: {
                             // owner: { $arrayElemAt: ["$owner", 0] }
                             owner: {
                                 $first: "$owner"
-                             }
+                            }
                         }
                     }
                 ]
@@ -451,8 +451,20 @@ const getWatchHistory = asyncHandler(async (req, res) => {
         }
     ])
     return res
-    .status(200)
-    .json(new ApiResponse(200, user[0].watchHistory, "User watch history successfully fetched"))
+        .status(200)
+        .json(new ApiResponse(200, user[0].watchHistory, "User watch history successfully fetched"))
 })
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage, getWatchHistory }
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken,
+    changeCurrentPassword,
+    getCurrentUser,
+    updateAccountDetails,
+    updateUserAvatar,
+    updateUserCoverImage,
+    getUserChannelProfile,
+    getWatchHistory
+}
